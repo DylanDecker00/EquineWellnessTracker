@@ -1,5 +1,19 @@
 package equinetracker.controller.model;
 
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import equinetracker.dao.HorseRepository;
 import equinetracker.dao.OwnerRepository;
 import equinetracker.dto.OwnerandHorse;
@@ -7,18 +21,6 @@ import equinetracker.entity.Horse;
 import equinetracker.entity.Owner;
 import equinetracker.service.OwnerService;
 import jakarta.validation.Valid;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/owners")
@@ -63,15 +65,19 @@ public class OwnerController {
     @PutMapping("/{id}")
     public ResponseEntity<Owner> updateOwner(@PathVariable Long id, @Valid @RequestBody Owner updatedOwner) {
         return ownerRepository.findById(id).map(owner -> {
-            owner.setFullName(updatedOwner.getFullName());
-            owner.setEmail(updatedOwner.getEmail());
-            owner.setPhone(updatedOwner.getPhone());
-            // ... other fields
-
-            Set<Long> horseIds = owner.getHorsesOwned().stream()
-                    .map(Horse::getId)
-                    .collect(Collectors.toSet());
-            owner.setOwnership(StringUtils.collectionToCommaDelimitedString(horseIds));
+            // Update only the fields that are provided in the request body
+            if (updatedOwner.getFullName() != null) {
+                owner.setFullName(updatedOwner.getFullName());
+            }
+            if (updatedOwner.getEmail() != null) {
+                owner.setEmail(updatedOwner.getEmail());
+            }
+            if (updatedOwner.getPhone() != null) {
+                owner.setPhone(updatedOwner.getPhone());
+            }
+            if (updatedOwner.getOwnership() != null) {
+                owner.setOwnership(updatedOwner.getOwnership());
+            }
 
             ownerRepository.save(owner);
             return ResponseEntity.ok(owner);
@@ -82,14 +88,7 @@ public class OwnerController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOwner(@PathVariable Long id) {
         return ownerRepository.findById(id).map(owner -> {
-            try {
-                ownerRepository.delete(owner);
-            } catch (DataIntegrityViolationException e) {
-                if (e.getCause() instanceof SQLIntegrityConstraintViolationException) {
-                    throw new RuntimeException("Must delete horses under current ownership before deleting owner.", e);
-                }
-                throw e;
-            }
+            ownerRepository.delete(owner);
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
     }

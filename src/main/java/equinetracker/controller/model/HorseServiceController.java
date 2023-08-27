@@ -53,40 +53,44 @@ public class HorseServiceController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createHorseService(
-            @RequestBody Map<String, Object> requestBody) {
-        Long horseId = ((Integer) requestBody.get("horseId")).longValue();
-        Long serviceId = ((Integer) requestBody.get("serviceId")).longValue();
-        Double hoursSpent = (Double) requestBody.get("hoursSpent");
+    public ResponseEntity<?> createHorseService(@RequestBody Map<String, Object> requestBody) {
+        try {
+            Long horseId = ((Number) requestBody.get("horseId")).longValue(); // Use Number to handle both Integer and Long
+            Long serviceId = ((Number) requestBody.get("serviceId")).longValue();
+            Double hoursSpent = ((Number) requestBody.get("hoursSpent")).doubleValue();
 
-        // Fetch the Horse entity using horseId
-        Horse horse = horseRepository.findById(horseId).orElse(null);
+            // Fetch the Horse entity using horseId
+            Horse horse = horseRepository.findById(horseId).orElse(null);
 
-        if (horse == null) {
-            return ResponseEntity.badRequest().body("Invalid horseId");
+            if (horse == null) {
+                return ResponseEntity.badRequest().body("Invalid horseId");
+            }
+
+            // Fetch the Service entity using serviceId
+            Service service = serviceRepository.findById(serviceId).orElse(null);
+
+            if (service == null) {
+                return ResponseEntity.badRequest().body("Invalid serviceId");
+            }
+
+            // Create HServiceId
+            HServiceId id = new HServiceId(horseId, serviceId);
+
+            // Create HorseServiceManager
+            HorseServiceManager horseServiceManager = new HorseServiceManager();
+            horseServiceManager.setId(id);
+            horseServiceManager.setHorse(horse); // Set the Horse entity
+            horseServiceManager.setService(service); // Set the Service entity
+            horseServiceManager.setHoursSpent(hoursSpent);
+
+            // Save and return the created entity
+            HorseServiceManager savedHorseService = horseServiceRepository.save(horseServiceManager);
+            return ResponseEntity.ok(savedHorseService);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Invalid input data");
         }
-
-        // Fetch the Service entity using serviceId
-        Service service = serviceRepository.findById(serviceId).orElse(null);
-
-        if (service == null) {
-            return ResponseEntity.badRequest().body("Invalid serviceId");
-        }
-
-        // Create HServiceId
-        HServiceId id = new HServiceId(horseId, serviceId);
-
-        // Create HorseServiceManager
-        HorseServiceManager horseServiceManager = new HorseServiceManager();
-        horseServiceManager.setId(id);
-        horseServiceManager.setHorse(horse); // Set the Horse entity
-        horseServiceManager.setService(service); // Set the Service entity
-        horseServiceManager.setHoursSpent(hoursSpent);
-
-        // Save and return the created entity
-        HorseServiceManager savedHorseService = horseServiceRepository.save(horseServiceManager);
-        return ResponseEntity.ok(savedHorseService);
     }
+
 
 
     @PutMapping("/{horseId}/{serviceId}")

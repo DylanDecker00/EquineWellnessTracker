@@ -52,8 +52,15 @@ public class HorseController {
             if (updatedHorse.getAge() != null) {
                 horse.setAge(updatedHorse.getAge());
             }
-            // handle other fields similarly
-            
+            if (updatedHorse.getKind() != null) {
+                horse.setKind(updatedHorse.getKind());
+            }
+            if (updatedHorse.getWorkSpecialty() != null) {
+                horse.setWorkSpecialty(updatedHorse.getWorkSpecialty());
+            }
+            if (updatedHorse.getGender() != null) {
+                horse.setGender(updatedHorse.getGender());
+        }
             if (updatedHorse.getOwner() != null && updatedHorse.getOwner().getId() != null) {
                 Owner owner = ownerRepository.findById(updatedHorse.getOwner().getId())
                     .orElseThrow(() -> new RuntimeException("Owner not found"));
@@ -88,16 +95,23 @@ public class HorseController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-	@GetMapping
-	public List<Horse> getAllHorses() {
-	    return horseRepository.findAll();
-	}
+    @GetMapping
+    public List<Horse> getAllHorses() {
+        List<Horse> horses = horseRepository.findAll();
+        // Add a log statement to check the fetched data
+        System.out.println("Fetched all horses: " + horses);
+        return horses;
+    }
 
-	@GetMapping("/{id}")
-	public ResponseEntity<Horse> getHorseById(@PathVariable Long id) {
-	    return horseRepository.findById(id)
-	            .map(ResponseEntity::ok)
-	            .orElse(ResponseEntity.notFound().build());
-	}
+    @GetMapping("/{id}")
+    public ResponseEntity<Horse> getHorseById(@PathVariable Long id) {
+        return horseRepository.findById(id)
+                .map(horse -> {
+                    // Add a log statement to check the fetched data
+                    System.out.println("Fetched horse by ID: " + horse);
+                    return ResponseEntity.ok(horse);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 
 }
