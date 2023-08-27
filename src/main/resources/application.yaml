@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/equine-wellness-tracker
+    username: equine-wellness-tracker
+    password: equine-wellness-tracker
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect  # If you're using MySQL 8
+        # If you're using MySQL 5.7, replace the above line with the one below:
+        # dialect: org.hibernate.dialect.MySQL57Dialect
