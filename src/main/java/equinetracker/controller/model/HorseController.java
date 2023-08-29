@@ -7,6 +7,7 @@ import equinetracker.dao.HorseRepository;
 import equinetracker.dao.OwnerRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,21 +27,30 @@ public class HorseController {
 
     @PostMapping
     public ResponseEntity<Horse> createHorse(@Valid @RequestBody Horse horseDTO) {
+        Horse savedHorse = null;
         if (horseDTO.getOwner() != null && horseDTO.getOwner().getId() != null) {
             Owner owner = ownerRepository.findById(horseDTO.getOwner().getId())
                 .orElseThrow(() -> new RuntimeException("Owner not found"));
+
             horseDTO.setOwner(owner);
+            savedHorse = horseRepository.save(horseDTO); // Save the horse first to get its ID
 
             // Update owner's ownership column with new horse's ID
             if (owner.getOwnership() == null) {
-                owner.setOwnership(horseDTO.getId().toString());
+                owner.setOwnership(savedHorse.getId().toString());
             } else {
-                owner.setOwnership(owner.getOwnership() + ", " + horseDTO.getId());
+                owner.setOwnership(owner.getOwnership() + ", " + savedHorse.getId());
             }
             ownerRepository.save(owner);
+        } else {
+            savedHorse = horseRepository.save(horseDTO);
         }
-        Horse savedHorse = horseRepository.save(horseDTO);
-        return ResponseEntity.ok(savedHorse);
+
+        if (savedHorse != null) {
+            return ResponseEntity.ok(savedHorse);
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     @PutMapping("/{id}")
